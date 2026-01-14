@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -18,9 +17,13 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
-  Coffee
+  Coffee,
+  Settings,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NavItem {
   label: string;
@@ -34,28 +37,30 @@ const navItems: NavItem[] = [
   { label: 'Franchises', icon: Store, path: '/franchises' },
   { label: 'Central Hub', icon: Factory, path: '/central-hub' },
   { label: 'Employees', icon: Users, path: '/employees' },
+  { label: 'Orders', icon: ShoppingCart, path: '/orders' },
+  { label: 'Invoices', icon: Receipt, path: '/invoices' },
   { label: 'Reports', icon: FileText, path: '/reports' },
   { label: 'Analytics', icon: BarChart3, path: '/analytics' },
   { label: 'Attendance', icon: Calendar, path: '/attendance' },
   { label: 'Product Launch', icon: Rocket, path: '/new-product-launch' },
-  { label: 'Invoices', icon: Receipt, path: '/invoices' },
-  { label: 'Orders', icon: ShoppingCart, path: '/orders' },
   { label: 'Notifications', icon: Bell, path: '/notifications' },
   { label: 'Careers', icon: Briefcase, path: '/careers' },
   { label: 'Profile', icon: User, path: '/profile' },
+  { label: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 export function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isCollapsed, isMobileOpen, toggleCollapse, closeMobile } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 80 : 260 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-50 flex flex-col shadow-xl"
-    >
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    closeMobile();
+  };
+
+  const SidebarContent = () => (
+    <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
         <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
@@ -74,20 +79,26 @@ export function Sidebar() {
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Mobile close button */}
+        <button
+          onClick={closeMobile}
+          className="md:hidden ml-auto p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-hide">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || 
             (item.path !== '/' && location.pathname.startsWith(item.path));
           
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
+          const navButton = (
+            <button
+              onClick={() => handleNavClick(item.path)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative w-full text-left',
                 isActive
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                   : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
@@ -116,15 +127,29 @@ export function Sidebar() {
                   </motion.span>
                 )}
               </AnimatePresence>
-            </NavLink>
+            </button>
+          );
+
+          return isCollapsed ? (
+            <Tooltip key={item.path} delayDuration={0}>
+              <TooltipTrigger asChild>
+                {navButton}
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div key={item.path}>{navButton}</div>
           );
         })}
       </nav>
 
-      {/* Collapse Button */}
+      {/* Collapse Button - Desktop only */}
       <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+        onClick={toggleCollapse}
+        className="hidden md:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-primary text-primary-foreground items-center justify-center shadow-lg hover:scale-110 transition-transform"
       >
         {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
@@ -144,6 +169,48 @@ export function Sidebar() {
           )}
         </AnimatePresence>
       </div>
-    </motion.aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Backdrop */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeMobile}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 80 : 260 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="fixed left-0 top-0 h-screen bg-sidebar text-sidebar-foreground z-50 hidden md:flex flex-col shadow-xl"
+      >
+        <SidebarContent />
+      </motion.aside>
+
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.aside
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="fixed left-0 top-0 h-screen w-[280px] bg-sidebar text-sidebar-foreground z-50 md:hidden flex flex-col shadow-xl"
+          >
+            <SidebarContent />
+          </motion.aside>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
