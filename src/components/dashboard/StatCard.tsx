@@ -10,7 +10,7 @@ interface StatCardProps {
   suffix?: string;
   icon: LucideIcon;
   trend?: number;
-  variant?: 'primary' | 'accent' | 'warning' | 'default';
+  variant?: 'primary' | 'accent' | 'warning' | 'info' | 'default';
   delay?: number;
 }
 
@@ -57,35 +57,32 @@ export function StatCard({
     return val.toLocaleString();
   };
 
-  const variants = {
-    primary: 'gradient-primary text-primary-foreground',
-    accent: 'gradient-accent text-accent-foreground',
-    warning: 'gradient-warm text-primary-foreground',
-    default: 'bg-card text-card-foreground border border-border'
+  const gradients = {
+    primary: 'bg-gradient-to-br from-primary via-primary to-orange-400',
+    accent: 'bg-gradient-to-br from-accent via-emerald-500 to-teal-400',
+    warning: 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-400',
+    info: 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500',
+    default: 'bg-card border border-border'
   };
 
-  const iconVariants = {
-    primary: 'bg-white/20',
-    accent: 'bg-white/20',
-    warning: 'bg-white/20',
-    default: 'bg-primary/10 text-primary'
-  };
+  const isGradient = variant !== 'default';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.4, delay: delay / 1000 }}
       className={cn(
-        'rounded-2xl p-6 shadow-card hover:shadow-elevated transition-shadow duration-300',
-        variants[variant]
+        'rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1',
+        gradients[variant],
+        isGradient ? 'text-white' : 'text-card-foreground'
       )}
     >
       <div className="flex items-start justify-between">
         <div>
           <p className={cn(
             'text-sm font-medium mb-1',
-            variant === 'default' ? 'text-muted-foreground' : 'text-white/80'
+            isGradient ? 'text-white/80' : 'text-muted-foreground'
           )}>
             {title}
           </p>
@@ -95,14 +92,19 @@ export function StatCard({
           {trend !== undefined && (
             <div className={cn(
               'flex items-center gap-1 mt-2 text-sm font-medium',
-              trend >= 0 ? 'text-accent' : 'text-destructive'
+              isGradient 
+                ? (trend >= 0 ? 'text-white/90' : 'text-red-200')
+                : (trend >= 0 ? 'text-accent' : 'text-destructive')
             )}>
               <span>{trend >= 0 ? '↑' : '↓'}</span>
               <span>{Math.abs(trend)}% from last month</span>
             </div>
           )}
         </div>
-        <div className={cn('p-3 rounded-xl', iconVariants[variant])}>
+        <div className={cn(
+          'p-3 rounded-xl',
+          isGradient ? 'bg-white/20' : 'bg-primary/10 text-primary'
+        )}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
