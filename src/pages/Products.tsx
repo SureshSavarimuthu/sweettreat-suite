@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Package, Trash2, Eye, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -14,13 +15,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import {
   mockProducts,
   initializeMockData,
   getStoredData,
+  setStoredData,
   Product
 } from '@/lib/mockData';
 
 export default function Products() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -30,10 +44,10 @@ export default function Products() {
   const [sort, setSort] = useState('name');
   const [perPage, setPerPage] = useState('20');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     initializeMockData();
-    // Simulate loading
     setTimeout(() => {
       setProducts(getStoredData('bakery_products', mockProducts));
       setLoading(false);
@@ -43,7 +57,6 @@ export default function Products() {
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Search filter
     if (search) {
       const searchLower = search.toLowerCase();
       result = result.filter(p =>
@@ -52,17 +65,14 @@ export default function Products() {
       );
     }
 
-    // Category filter
     if (category !== 'all') {
       result = result.filter(p => p.category === category);
     }
 
-    // Status filter
     if (status !== 'all') {
       result = result.filter(p => p.status === status);
     }
 
-    // Stock filter
     if (stockFilter === 'in-stock') {
       result = result.filter(p => p.stock > p.lowStockThreshold);
     } else if (stockFilter === 'low-stock') {
@@ -71,7 +81,6 @@ export default function Products() {
       result = result.filter(p => p.stock === 0);
     }
 
-    // Sorting
     switch (sort) {
       case 'price-asc':
         result.sort((a, b) => a.price - b.price);
@@ -101,21 +110,30 @@ export default function Products() {
   const totalPages = Math.ceil(filteredProducts.length / parseInt(perPage));
 
   const handleEdit = (product: Product) => {
-    console.log('Edit product:', product);
+    navigate(`/products/${product.slug}/edit`);
   };
 
   const handleView = (product: Product) => {
-    console.log('View product:', product);
+    navigate(`/products/${product.slug}`);
   };
 
   const handleDelete = (product: Product) => {
-    console.log('Delete product:', product);
+    setDeleteProduct(product);
+  };
+
+  const confirmDelete = () => {
+    if (deleteProduct) {
+      const updated = products.filter(p => p.id !== deleteProduct.id);
+      setProducts(updated);
+      setStoredData('bakery_products', updated);
+      toast.success(`${deleteProduct.name} deleted successfully`);
+      setDeleteProduct(null);
+    }
   };
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Products</h1>
@@ -123,13 +141,12 @@ export default function Products() {
               Manage your bakery and tea products ({filteredProducts.length} items)
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => navigate('/products/create')}>
             <Plus className="w-4 h-4" />
             Add Product
           </Button>
         </div>
 
-        {/* Filters */}
         <ProductFilters
           onSearchChange={setSearch}
           onCategoryChange={setCategory}
@@ -138,7 +155,6 @@ export default function Products() {
           onSortChange={setSort}
         />
 
-        {/* Products Grid */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {[...Array(8)].map((_, i) => (
@@ -158,6 +174,10 @@ export default function Products() {
             <Package className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="font-display text-lg font-semibold text-foreground">No products found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your filters or add a new product.</p>
+            <Button className="mt-4" onClick={() => navigate('/products/create')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
           </motion.div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
@@ -174,7 +194,6 @@ export default function Products() {
           </div>
         )}
 
-        {/* Pagination */}
         {!loading && filteredProducts.length > 0 && (
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -216,6 +235,23 @@ export default function Products() {
             </div>
           </div>
         )}
+
+        <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{deleteProduct?.name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
