@@ -13,7 +13,11 @@ import ProductEdit from "./pages/products/ProductEdit";
 import ProductView from "./pages/products/ProductView";
 import Franchises from "./pages/Franchises";
 import CentralHub from "./pages/CentralHub";
+import CentralHubDetail from "./pages/CentralHubDetail";
 import Employees from "./pages/Employees";
+import EmployeeCreate from "./pages/employees/EmployeeCreate";
+import EmployeeEdit from "./pages/employees/EmployeeEdit";
+import EmployeeView from "./pages/employees/EmployeeView";
 import Orders from "./pages/Orders";
 import Invoices from "./pages/Invoices";
 import Notifications from "./pages/Notifications";
@@ -56,7 +60,11 @@ const App = () => (
                 <Route path="/products/:slug/edit" element={<ProductEdit />} />
                 <Route path="/franchises" element={<Franchises />} />
                 <Route path="/central-hub" element={<CentralHub />} />
+                <Route path="/central-hub/:id" element={<CentralHubDetail />} />
                 <Route path="/employees" element={<Employees />} />
+                <Route path="/employees/create" element={<EmployeeCreate />} />
+                <Route path="/employees/:id" element={<EmployeeView />} />
+                <Route path="/employees/:id/edit" element={<EmployeeEdit />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/invoices" element={<Invoices />} />
                 <Route path="/notifications" element={<Notifications />} />

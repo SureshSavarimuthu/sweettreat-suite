@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Search, Phone, Mail, MapPin, Calendar, Grid, List, Eye, Edit, Power } from 'lucide-react';
+import { Plus, Search, Phone, Mail, MapPin, Calendar, Grid, List, Eye, Edit, Power, Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -20,73 +24,82 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
   Employee,
   mockEmployees,
   departments,
-  designations,
   getStoredData,
   setStoredData,
-  generateId,
   initializeMockData
 } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
+const ITEMS_PER_PAGE = 12;
+
 export default function Employees() {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; employee: Employee | null; action: 'activate' | 'deactivate' }>({
+    open: false,
+    employee: null,
+    action: 'activate'
+  });
 
   useEffect(() => {
     initializeMockData();
     setEmployees(getStoredData('bakery_employees', mockEmployees));
   }, []);
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const filteredEmployees = employees.filter(e => {
-    const matchesSearch = e.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      e.email.toLowerCase().includes(search.toLowerCase()) ||
-      e.employeeId.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = e.fullName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      e.email.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      e.employeeId.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesDept = departmentFilter === 'all' || e.department === departmentFilter;
     const matchesStatus = statusFilter === 'all' || e.status === statusFilter;
     return matchesSearch && matchesDept && matchesStatus;
   });
 
-  const handleCreateEmployee = (data: Partial<Employee>) => {
-    const newEmployee: Employee = {
-      id: generateId('emp'),
-      employeeId: `EMP-${new Date().getFullYear()}-${String(employees.length + 1).padStart(3, '0')}`,
-      fullName: data.fullName || '',
-      email: data.email || '',
-      phone: data.phone || '',
-      designation: data.designation || '',
-      department: data.department || '',
-      location: data.location || '',
-      locationType: data.locationType || 'admin',
-      dateOfJoining: new Date().toISOString().split('T')[0],
-      salary: data.salary || 0,
-      status: 'active',
-      profilePhoto: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName || '')}&background=da7727&color=fff`
-    };
-    const updated = [...employees, newEmployee];
-    setEmployees(updated);
-    setStoredData('bakery_employees', updated);
-    setIsCreateOpen(false);
-    toast.success('Employee created successfully!');
-  };
+  const paginatedEmployees = filteredEmployees.slice(0, page * ITEMS_PER_PAGE);
+  const hasMore = paginatedEmployees.length < filteredEmployees.length;
 
-  const handleToggleStatus = (employee: Employee) => {
-    const newStatus = employee.status === 'active' ? 'inactive' : 'active';
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !isLoading) {
+      setIsLoading(true);
+      setTimeout(() => {
+        setPage(prev => prev + 1);
+        setIsLoading(false);
+      }, 500);
+    }
+  }, [hasMore, isLoading]);
+
+  const handleToggleStatus = () => {
+    if (!confirmDialog.employee) return;
+    
+    const newStatus = confirmDialog.action === 'activate' ? 'active' : 'inactive';
     const updated = employees.map(e =>
-      e.id === employee.id ? { ...e, status: newStatus as 'active' | 'inactive' } : e
+      e.id === confirmDialog.employee!.id ? { ...e, status: newStatus as Employee['status'] } : e
     );
     setEmployees(updated);
     setStoredData('bakery_employees', updated);
     toast.success(`Employee ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
+    setConfirmDialog({ open: false, employee: null, action: 'activate' });
   };
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString()}`;
@@ -101,20 +114,10 @@ export default function Employees() {
               Manage your team ({employees.length} employees)
             </p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Employee
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New Employee</DialogTitle>
-              </DialogHeader>
-              <EmployeeForm onSubmit={handleCreateEmployee} />
-            </DialogContent>
-          </Dialog>
+          <Button className="gap-2" onClick={() => navigate('/employees/create')}>
+            <Plus className="w-4 h-4" />
+            Add Employee
+          </Button>
         </div>
 
         {/* Filters */}
@@ -170,71 +173,91 @@ export default function Employees() {
 
         {/* Employee List */}
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredEmployees.map((employee, index) => (
-              <motion.div
-                key={employee.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-card rounded-xl p-5 shadow-card hover:shadow-elevated transition-all"
-              >
-                <div className="flex flex-col items-center text-center mb-4">
-                  <Avatar className="w-16 h-16 mb-3">
-                    <AvatarImage src={employee.profilePhoto} />
-                    <AvatarFallback>{employee.fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <h3 className="font-semibold text-foreground">{employee.fullName}</h3>
-                  <p className="text-sm text-primary">{employee.designation}</p>
-                  <Badge className={cn(
-                    'mt-2',
-                    employee.status === 'active' ? 'bg-accent' :
-                    employee.status === 'on-leave' ? 'bg-warning text-foreground' :
-                    'bg-muted text-muted-foreground'
-                  )}>
-                    {employee.status}
-                  </Badge>
-                </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {paginatedEmployees.map((employee, index) => (
+                <motion.div
+                  key={employee.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(index * 0.05, 0.5) }}
+                  className="bg-card rounded-xl p-5 shadow-card hover:shadow-elevated transition-all"
+                >
+                  <div className="flex flex-col items-center text-center mb-4">
+                    <Avatar className="w-16 h-16 mb-3">
+                      <AvatarImage src={employee.profilePhoto} />
+                      <AvatarFallback>{employee.fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="font-semibold text-foreground">{employee.fullName}</h3>
+                    <p className="text-sm text-primary">{employee.designation}</p>
+                    <Badge className={cn(
+                      'mt-2',
+                      employee.status === 'active' ? 'bg-accent' :
+                      employee.status === 'on-leave' ? 'bg-warning text-foreground' :
+                      'bg-muted text-muted-foreground'
+                    )}>
+                      {employee.status}
+                    </Badge>
+                  </div>
 
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{employee.email}</span>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{employee.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      <span>{employee.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{employee.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span>Joined {employee.dateOfJoining}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="w-4 h-4 flex-shrink-0" />
-                    <span>{employee.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{employee.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="w-4 h-4 flex-shrink-0" />
-                    <span>Joined {employee.dateOfJoining}</span>
-                  </div>
-                </div>
 
-                <div className="flex gap-2 mt-4 pt-4 border-t">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="w-4 h-4 mr-1" />
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant={employee.status === 'active' ? 'destructive' : 'default'}
-                    size="sm"
-                    onClick={() => handleToggleStatus(employee)}
-                  >
-                    <Power className="w-4 h-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  <div className="flex gap-2 mt-4 pt-4 border-t">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/employees/${employee.id}`)}>
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/employees/${employee.id}/edit`)}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant={employee.status === 'active' ? 'destructive' : 'default'}
+                      size="sm"
+                      onClick={() => setConfirmDialog({
+                        open: true,
+                        employee,
+                        action: employee.status === 'active' ? 'deactivate' : 'activate'
+                      })}
+                    >
+                      <Power className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {hasMore && (
+              <div className="flex justify-center mt-6">
+                <Button variant="outline" onClick={handleLoadMore} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (${filteredEmployees.length - paginatedEmployees.length} remaining)`
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="bg-card rounded-xl shadow-card overflow-hidden">
             <table className="w-full">
@@ -249,7 +272,7 @@ export default function Employees() {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.map(employee => (
+                {paginatedEmployees.map(employee => (
                   <tr key={employee.id} className="border-t hover:bg-secondary/50">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -277,12 +300,20 @@ export default function Employees() {
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/employees/${employee.id}`)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/employees/${employee.id}/edit`)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleToggleStatus(employee)}
+                          onClick={() => setConfirmDialog({
+                            open: true,
+                            employee,
+                            action: employee.status === 'active' ? 'deactivate' : 'activate'
+                          })}
                         >
                           <Power className="w-4 h-4" />
                         </Button>
@@ -294,122 +325,31 @@ export default function Employees() {
             </table>
           </div>
         )}
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, open: false })}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirmDialog.action === 'activate' ? 'Activate' : 'Deactivate'} Employee?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to {confirmDialog.action} {confirmDialog.employee?.fullName}?
+                {confirmDialog.action === 'deactivate' && ' This employee will no longer have access to the system.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleToggleStatus}
+                className={confirmDialog.action === 'deactivate' ? 'bg-destructive hover:bg-destructive/90' : ''}
+              >
+                {confirmDialog.action === 'activate' ? 'Activate' : 'Deactivate'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
-  );
-}
-
-function EmployeeForm({ onSubmit }: { onSubmit: (data: Partial<Employee>) => void }) {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    designation: '',
-    department: '',
-    location: '',
-    locationType: 'admin' as Employee['locationType'],
-    salary: 0
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Full Name</Label>
-          <Input
-            value={formData.fullName}
-            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Email</Label>
-          <Input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Phone</Label>
-          <Input
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Salary (₹)</Label>
-          <Input
-            type="number"
-            value={formData.salary}
-            onChange={(e) => setFormData({ ...formData, salary: parseInt(e.target.value) })}
-            required
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Department</Label>
-          <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select department" />
-            </SelectTrigger>
-            <SelectContent>
-              {departments.map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Designation</Label>
-          <Select value={formData.designation} onValueChange={(v) => setFormData({ ...formData, designation: v })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select designation" />
-            </SelectTrigger>
-            <SelectContent>
-              {designations.map(des => (
-                <SelectItem key={des} value={des}>{des}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Location Type</Label>
-          <Select value={formData.locationType} onValueChange={(v) => setFormData({ ...formData, locationType: v as Employee['locationType'] })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="kitchen">Kitchen</SelectItem>
-              <SelectItem value="warehouse">Warehouse</SelectItem>
-              <SelectItem value="franchise">Franchise</SelectItem>
-              <SelectItem value="admin">Admin Office</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Location</Label>
-          <Input
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            placeholder="e.g., Kitchen - Anna Nagar"
-            required
-          />
-        </div>
-      </div>
-      <Button type="submit" className="w-full">Create Employee</Button>
-    </form>
   );
 }
