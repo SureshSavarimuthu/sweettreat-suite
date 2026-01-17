@@ -27,6 +27,8 @@ import {
   initializeMockData
 } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -57,12 +59,78 @@ export default function Invoices() {
   };
 
   const handleDownloadPDF = (invoice: Invoice) => {
-    // Simulate PDF download
-    toast.success(`Downloading ${invoice.invoiceNumber}.pdf`);
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(24);
+    doc.setTextColor(139, 92, 42); // Brown color
+    doc.text('Tea & Bakery', 20, 25);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Central Office, Chennai', 20, 32);
+    doc.text('Phone: +91 98765 43210', 20, 37);
+    
+    // Invoice Details
+    doc.setFontSize(18);
+    doc.setTextColor(0);
+    doc.text('INVOICE', 150, 25);
+    
+    doc.setFontSize(10);
+    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 150, 35);
+    doc.text(`Date: ${invoice.createdAt}`, 150, 42);
+    doc.text(`Due Date: ${invoice.dueDate}`, 150, 49);
+    
+    // Bill To Section
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Bill To:', 20, 60);
+    doc.setFontSize(11);
+    doc.text(invoice.franchiseName, 20, 67);
+    
+    // Status
+    const statusColors: { [key: string]: [number, number, number] } = {
+      paid: [34, 197, 94],
+      unpaid: [234, 179, 8],
+      partial: [59, 130, 246],
+      overdue: [239, 68, 68]
+    };
+    const color = statusColors[invoice.status] || [100, 100, 100];
+    doc.setFillColor(color[0], color[1], color[2]);
+    doc.roundedRect(150, 55, 40, 10, 2, 2, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(10);
+    doc.text(invoice.status.toUpperCase(), 170, 62, { align: 'center' });
+    
+    // Table
+    autoTable(doc, {
+      startY: 80,
+      head: [['Description', 'Amount']],
+      body: [
+        ['Products & Services', `₹${invoice.amount.toLocaleString()}`],
+        ['GST (18%)', `₹${invoice.gst.toLocaleString()}`],
+      ],
+      foot: [['Total Amount', `₹${invoice.totalAmount.toLocaleString()}`]],
+      theme: 'striped',
+      headStyles: { fillColor: [139, 92, 42] },
+      footStyles: { fillColor: [139, 92, 42], textColor: [255, 255, 255], fontStyle: 'bold' }
+    });
+    
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Thank you for your business!', 105, finalY, { align: 'center' });
+    doc.text('Payment Terms: Net 30 Days', 105, finalY + 7, { align: 'center' });
+    
+    // Save
+    doc.save(`${invoice.invoiceNumber}.pdf`);
+    toast.success(`Downloaded ${invoice.invoiceNumber}.pdf`);
   };
 
   const handleSendEmail = (invoice: Invoice) => {
-    toast.success(`Invoice sent to ${invoice.franchiseName}`);
+    // Simulate email sending
+    toast.success(`Invoice ${invoice.invoiceNumber} sent to ${invoice.franchiseName}`);
   };
 
   const formatCurrency = (value: number) => `₹${value.toLocaleString()}`;
@@ -113,75 +181,81 @@ export default function Invoices() {
 
         {/* Invoice List */}
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-secondary">
-              <tr>
-                <th className="text-left p-4 font-medium text-muted-foreground">Invoice #</th>
-                <th className="text-left p-4 font-medium text-muted-foreground">Franchise</th>
-                <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
-                <th className="text-right p-4 font-medium text-muted-foreground">Amount</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">Status</th>
-                <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredInvoices.map((invoice, index) => (
-                <motion.tr
-                  key={invoice.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border-t hover:bg-secondary/50"
-                >
-                  <td className="p-4 font-medium">{invoice.invoiceNumber}</td>
-                  <td className="p-4">{invoice.franchiseName}</td>
-                  <td className="p-4">{invoice.createdAt}</td>
-                  <td className="p-4 text-right font-semibold text-primary">
-                    {formatCurrency(invoice.totalAmount)}
-                  </td>
-                  <td className="p-4 text-center">
-                    <Badge className={getStatusColor(invoice.status)}>
-                      {invoice.status}
-                    </Badge>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedInvoice(invoice)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownloadPDF(invoice)}
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSendEmail(invoice)}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </Button>
-                      {invoice.status !== 'paid' && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-secondary">
+                <tr>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Invoice #</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Franchise</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Date</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Amount</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((invoice, index) => (
+                  <motion.tr
+                    key={invoice.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="border-t hover:bg-secondary/50"
+                  >
+                    <td className="p-4 font-medium">{invoice.invoiceNumber}</td>
+                    <td className="p-4">{invoice.franchiseName}</td>
+                    <td className="p-4">{invoice.createdAt}</td>
+                    <td className="p-4 text-right font-semibold text-primary">
+                      {formatCurrency(invoice.totalAmount)}
+                    </td>
+                    <td className="p-4 text-center">
+                      <Badge className={getStatusColor(invoice.status)}>
+                        {invoice.status}
+                      </Badge>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleMarkPaid(invoice.id)}
+                          onClick={() => setSelectedInvoice(invoice)}
+                          title="View"
                         >
-                          <Check className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
-                      )}
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownloadPDF(invoice)}
+                          title="Download PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSendEmail(invoice)}
+                          title="Send Email"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </Button>
+                        {invoice.status !== 'paid' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMarkPaid(invoice.id)}
+                            title="Mark as Paid"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {filteredInvoices.length === 0 && (
             <div className="text-center py-12">
