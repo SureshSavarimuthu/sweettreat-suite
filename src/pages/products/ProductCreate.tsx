@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { ArrowLeft, Upload, X, ImagePlus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -27,6 +27,8 @@ import {
 export default function ProductCreate() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -40,7 +42,8 @@ export default function ProductCreate() {
     locationId: '',
     status: 'active' as 'active' | 'inactive',
     dietary: [] as string[],
-    description: ''
+    description: '',
+    image: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -97,7 +100,7 @@ export default function ProductCreate() {
       },
       status: formData.status,
       dietary: formData.dietary,
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
+      image: imagePreview || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
       createdAt: new Date().toISOString().split('T')[0]
     };
 
@@ -120,6 +123,31 @@ export default function ProductCreate() {
         ? prev.dietary.filter(d => d !== value)
         : [...prev.dietary, value]
     }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImagePreview(result);
+        setFormData(prev => ({ ...prev, image: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, image: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -195,6 +223,41 @@ export default function ProductCreate() {
                   </Button>
                 ))}
               </div>
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <Label>Product Image</Label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              {imagePreview ? (
+                <div className="relative w-40 h-40 rounded-lg overflow-hidden border">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 w-6 h-6"
+                    onClick={removeImage}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-40 h-40 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                >
+                  <ImagePlus className="w-8 h-8 text-muted-foreground mb-2" />
+                  <span className="text-sm text-muted-foreground">Upload Image</span>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Max 5MB, JPG/PNG/WEBP</p>
             </div>
           </div>
 

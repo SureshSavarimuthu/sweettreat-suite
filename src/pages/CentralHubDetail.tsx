@@ -67,7 +67,12 @@ export default function CentralHubDetail() {
     const foundHub = hubs.find(h => h.id === id);
     if (foundHub) {
       setHub(foundHub);
-      const hubProducts = allProducts.filter(p => p.location.id === id);
+      // Filter products by location id OR location name matching hub name
+      const hubProducts = allProducts.filter(p => 
+        p.location.id === id || 
+        p.location.name === foundHub.name ||
+        p.location.name.toLowerCase().includes(foundHub.name.toLowerCase().split(' - ')[1] || '')
+      );
       setProducts(hubProducts);
       setSalesData(generateSalesData(id || '', salesPeriod));
     }
