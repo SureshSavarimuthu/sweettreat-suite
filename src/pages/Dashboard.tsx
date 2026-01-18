@@ -123,14 +123,14 @@ export default function Dashboard() {
             value={stats.totalOrders}
             icon={ShoppingCart}
             trend={15}
-            variant="default"
+            variant="info"
             delay={200}
           />
           <StatCard
             title="Total Products"
-            value={stats.totalProducts}
+            value={products.length}
             icon={Package}
-            variant="default"
+            variant="secondary"
             delay={300}
           />
         </div>

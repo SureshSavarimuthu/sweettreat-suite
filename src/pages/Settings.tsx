@@ -146,24 +146,6 @@ export default function Settings() {
 
           <TabsContent value="security" className="space-y-6">
             <Card className="p-6">
-              <h3 className="font-semibold mb-4">Password & Authentication</h3>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="font-medium mb-2">Change Password</p>
-                  <p className="text-sm text-muted-foreground mb-4">Update your account password</p>
-                  <Button variant="outline">Change Password</Button>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                  <div>
-                    <p className="font-medium">Two-Factor Authentication</p>
-                    <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
-                  </div>
-                  <Switch />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
               <h3 className="font-semibold mb-4">Session Management</h3>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-2">Active Sessions</p>
