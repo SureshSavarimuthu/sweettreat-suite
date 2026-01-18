@@ -885,11 +885,22 @@ export function setStoredData<T>(key: string, data: T): void {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+// Data version - increment this to force refresh cached data
+const DATA_VERSION = 2;
+
 // Initialize localStorage with mock data
 export function initializeMockData(): void {
-  if (!localStorage.getItem('bakery_products')) {
+  const storedVersion = localStorage.getItem('bakery_data_version');
+  const currentVersion = storedVersion ? parseInt(storedVersion) : 0;
+  
+  // Force refresh all data if version changed
+  if (currentVersion < DATA_VERSION) {
+    localStorage.setItem('bakery_data_version', String(DATA_VERSION));
     setStoredData('bakery_products', mockProducts);
+    setStoredData('bakery_central_hubs', mockCentralHubs);
+    console.log(`Data upgraded from v${currentVersion} to v${DATA_VERSION}`);
   }
+  
   if (!localStorage.getItem('bakery_shops')) {
     setStoredData('bakery_shops', mockShops);
   }

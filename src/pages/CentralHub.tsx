@@ -24,7 +24,9 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
   CentralHub,
+  Product,
   mockCentralHubs,
+  mockProducts,
   getStoredData,
   setStoredData,
   generateId,
@@ -42,11 +44,14 @@ export default function CentralHubPage() {
   useEffect(() => {
     initializeMockData();
     const storedHubs = getStoredData('bakery_central_hubs', mockCentralHubs);
-    const storedProducts = getStoredData<any[]>('bakery_products', []);
+    const storedProducts = getStoredData<Product[]>('bakery_products', mockProducts);
+    
+    console.log('Products loaded:', storedProducts.length);
     
     // Update hub product counts based on actual products
     const updatedHubs = storedHubs.map(hub => {
       const hubProducts = storedProducts.filter(p => p.location?.id === hub.id);
+      console.log(`Hub ${hub.name} (${hub.id}): ${hubProducts.length} products`);
       return {
         ...hub,
         totalProducts: hubProducts.length,
