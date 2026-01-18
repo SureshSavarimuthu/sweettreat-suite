@@ -302,14 +302,26 @@ export default function ProductLaunch() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Banner Image URL</Label>
+              <Label>Banner Image</Label>
               <Input
-                value={formData.bannerImage}
-                onChange={(e) => setFormData({ ...formData, bannerImage: e.target.value })}
-                placeholder="https://..."
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setFormData({ ...formData, bannerImage: reader.result as string });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
               />
+              {formData.bannerImage && (
+                <img src={formData.bannerImage} alt="Preview" className="w-full h-32 object-cover rounded-lg mt-2" />
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Launch Date *</Label>
                 <Input

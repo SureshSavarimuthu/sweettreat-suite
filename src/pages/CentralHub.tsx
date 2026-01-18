@@ -41,7 +41,20 @@ export default function CentralHubPage() {
 
   useEffect(() => {
     initializeMockData();
-    setHubs(getStoredData('bakery_central_hubs', mockCentralHubs));
+    const storedHubs = getStoredData('bakery_central_hubs', mockCentralHubs);
+    const storedProducts = getStoredData<any[]>('bakery_products', []);
+    
+    // Update hub product counts based on actual products
+    const updatedHubs = storedHubs.map(hub => {
+      const hubProducts = storedProducts.filter(p => p.location?.id === hub.id);
+      return {
+        ...hub,
+        totalProducts: hubProducts.length,
+        outOfStock: hubProducts.filter(p => p.stock === 0).length,
+        lowStock: hubProducts.filter(p => p.stock > 0 && p.stock <= p.lowStockThreshold).length
+      };
+    });
+    setHubs(updatedHubs);
   }, []);
 
   const filteredHubs = hubs.filter(h => {

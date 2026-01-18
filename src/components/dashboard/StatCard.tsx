@@ -10,7 +10,7 @@ interface StatCardProps {
   suffix?: string;
   icon: LucideIcon;
   trend?: number;
-  variant?: 'primary' | 'accent' | 'warning' | 'info' | 'default';
+  variant?: 'primary' | 'accent' | 'warning' | 'info' | 'secondary' | 'default';
   delay?: number;
 }
 
@@ -62,10 +62,11 @@ export function StatCard({
     accent: 'bg-gradient-to-br from-accent via-emerald-500 to-teal-400',
     warning: 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-400',
     info: 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500',
+    secondary: 'bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500',
     default: 'bg-card border border-border'
   };
 
-  const isGradient = variant !== 'default';
+  const isGradient = variant !== 'default' && variant !== undefined;
 
   return (
     <motion.div
