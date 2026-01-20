@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Eye, Edit2, Trash2, Rocket, X, Calendar } from 'lucide-react';
+import { Plus, Eye, Edit2, Trash2, Rocket, X, Calendar, ImagePlus } from 'lucide-react';
+import { ImageCropper, CROP_PRESETS } from '@/components/ui/image-cropper';
 import {
   Dialog,
   DialogContent,
@@ -90,6 +91,38 @@ export default function ProductLaunch() {
   const [selectedLaunch, setSelectedLaunch] = useState<LaunchType | null>(null);
   const [formData, setFormData] = useState<LaunchFormData>(initialFormData);
   const [isEditing, setIsEditing] = useState(false);
+  const [tempImage, setTempImage] = useState('');
+  const [showCropper, setShowCropper] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setTempImage(result);
+        setShowCropper(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    setFormData({ ...formData, bannerImage: croppedImage });
+    setTempImage('');
+  };
+
+  const removeBanner = () => {
+    setFormData({ ...formData, bannerImage: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     initializeMockData();
@@ -192,6 +225,14 @@ export default function ProductLaunch() {
   };
 
   return (
+    <>
+    <ImageCropper
+      open={showCropper}
+      onClose={() => { setShowCropper(false); setTempImage(''); }}
+      imageSrc={tempImage}
+      onCropComplete={handleCropComplete}
+      {...CROP_PRESETS.banner}
+    />
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -303,23 +344,36 @@ export default function ProductLaunch() {
             </div>
             <div className="space-y-2">
               <Label>Banner Image</Label>
-              <Input
+              <input
                 type="file"
+                ref={fileInputRef}
                 accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setFormData({ ...formData, bannerImage: reader.result as string });
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
+                onChange={handleBannerUpload}
+                className="hidden"
               />
-              {formData.bannerImage && (
-                <img src={formData.bannerImage} alt="Preview" className="w-full h-32 object-cover rounded-lg mt-2" />
+              {formData.bannerImage ? (
+                <div className="relative">
+                  <img src={formData.bannerImage} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 w-6 h-6"
+                    onClick={removeBanner}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                >
+                  <ImagePlus className="w-8 h-8 text-muted-foreground mb-2" />
+                  <span className="text-sm text-muted-foreground">Upload Banner (16:9)</span>
+                </div>
               )}
+              <p className="text-xs text-muted-foreground">Max 5MB, JPG/PNG/WEBP. Recommended: 1200x675px</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -435,5 +489,6 @@ export default function ProductLaunch() {
         </AlertDialogContent>
       </AlertDialog>
     </MainLayout>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Upload, X, ImagePlus } from 'lucide-react';
+import { ImageCropper, CROP_PRESETS } from '@/components/ui/image-cropper';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,8 @@ export default function ProductCreate() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [tempImage, setTempImage] = useState<string>('');
+  const [showCropper, setShowCropper] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -135,11 +138,17 @@ export default function ProductCreate() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setImagePreview(result);
-        setFormData(prev => ({ ...prev, image: result }));
+        setTempImage(result);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    setImagePreview(croppedImage);
+    setFormData(prev => ({ ...prev, image: croppedImage }));
+    setTempImage('');
   };
 
   const removeImage = () => {
@@ -151,6 +160,14 @@ export default function ProductCreate() {
   };
 
   return (
+    <>
+    <ImageCropper
+      open={showCropper}
+      onClose={() => { setShowCropper(false); setTempImage(''); }}
+      imageSrc={tempImage}
+      onCropComplete={handleCropComplete}
+      {...CROP_PRESETS.product}
+    />
     <MainLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
@@ -426,5 +443,6 @@ export default function ProductCreate() {
         </form>
       </div>
     </MainLayout>
+    </>
   );
 }
