@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowLeft, Upload, User } from 'lucide-react';
+import { ImageCropper, CROP_PRESETS } from '@/components/ui/image-cropper';
 import {
   Employee,
   departments,
@@ -53,6 +54,8 @@ export default function EmployeeCreate() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [previewImage, setPreviewImage] = useState('');
+  const [tempImage, setTempImage] = useState('');
+  const [showCropper, setShowCropper] = useState(false);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -77,14 +80,24 @@ export default function EmployeeCreate() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image size should be less than 2MB');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setPreviewImage(result);
-        setFormData({ ...formData, profilePhoto: result });
+        setTempImage(result);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    setPreviewImage(croppedImage);
+    setFormData({ ...formData, profilePhoto: croppedImage });
+    setTempImage('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -118,6 +131,14 @@ export default function EmployeeCreate() {
   };
 
   return (
+    <>
+    <ImageCropper
+      open={showCropper}
+      onClose={() => { setShowCropper(false); setTempImage(''); }}
+      imageSrc={tempImage}
+      onCropComplete={handleCropComplete}
+      {...CROP_PRESETS.avatar}
+    />
     <MainLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
@@ -387,5 +408,6 @@ export default function EmployeeCreate() {
         </form>
       </div>
     </MainLayout>
+    </>
   );
 }

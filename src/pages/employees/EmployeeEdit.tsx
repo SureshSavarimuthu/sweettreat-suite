@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowLeft, Upload, User } from 'lucide-react';
+import { ImageCropper, CROP_PRESETS } from '@/components/ui/image-cropper';
 import {
   Employee,
   departments,
@@ -44,6 +45,8 @@ export default function EmployeeEdit() {
     profilePhoto: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [tempImage, setTempImage] = useState('');
+  const [showCropper, setShowCropper] = useState(false);
 
   useEffect(() => {
     const employees = getStoredData<Employee[]>('bakery_employees', mockEmployees);
@@ -83,12 +86,23 @@ export default function EmployeeEdit() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image size should be less than 2MB');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, profilePhoto: reader.result as string });
+        const result = reader.result as string;
+        setTempImage(result);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    setFormData({ ...formData, profilePhoto: croppedImage });
+    setTempImage('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -118,6 +132,14 @@ export default function EmployeeEdit() {
   }
 
   return (
+    <>
+    <ImageCropper
+      open={showCropper}
+      onClose={() => { setShowCropper(false); setTempImage(''); }}
+      imageSrc={tempImage}
+      onCropComplete={handleCropComplete}
+      {...CROP_PRESETS.avatar}
+    />
     <MainLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
@@ -295,5 +317,6 @@ export default function EmployeeEdit() {
         </form>
       </div>
     </MainLayout>
+    </>
   );
 }
