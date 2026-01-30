@@ -64,7 +64,7 @@ export default function Invoices() {
     // Header
     doc.setFontSize(24);
     doc.setTextColor(139, 92, 42); // Brown color
-    doc.text('Tea & Bakery', 20, 25);
+    doc.text('Thatha Tea', 20, 25);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -278,7 +278,7 @@ export default function Invoices() {
                   {/* Invoice Header */}
                   <div className="flex justify-between items-start p-4 bg-secondary/50 rounded-lg">
                     <div>
-                      <h3 className="font-display text-xl font-bold text-primary">Tea & Bakery</h3>
+                      <h3 className="font-display text-xl font-bold text-primary">Thatha Tea</h3>
                       <p className="text-sm text-muted-foreground">Central Office, Chennai</p>
                     </div>
                     <div className="text-right">

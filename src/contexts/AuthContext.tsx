@@ -22,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const MOCK_USER: User = {
   id: 'user-001',
-  email: 'admin@teabakery.com',
+  email: 'admin@thathatea.com',
   name: 'Admin User',
   role: 'Super Admin',
   avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100'
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Mock authentication
-    if (email === 'admin@teabakery.com' && password === 'admin123') {
+    if (email === 'admin@thathatea.com' && password === 'admin123') {
       const authData = { user: MOCK_USER, token: 'mock-jwt-token' };
       localStorage.setItem('bakery_auth', JSON.stringify(authData));
       setUser(MOCK_USER);

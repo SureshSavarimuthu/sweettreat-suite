@@ -164,11 +164,11 @@ export default function Settings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Business Name</Label>
-                    <Input defaultValue="Tea & Bakery" />
+                    <Input defaultValue="Thatha Tea" />
                   </div>
                   <div className="space-y-2">
                     <Label>Business Email</Label>
-                    <Input defaultValue="info@teabakery.com" />
+                    <Input defaultValue="info@thathatea.com" />
                   </div>
                   <div className="space-y-2">
                     <Label>Phone Number</Label>

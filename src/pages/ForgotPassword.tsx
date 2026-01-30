@@ -90,7 +90,7 @@ export default function ForgotPassword() {
             <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-4">
               <Coffee className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h1 className="font-display text-2xl font-bold">Tea & Bakery</h1>
+            <h1 className="font-display text-2xl font-bold">Thatha Tea</h1>
           </div>
 
           <Link to="/login" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">

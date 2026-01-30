@@ -1,4 +1,4 @@
-// Mock data for the Tea & Bakery Admin Dashboard
+// Mock data for the Thatha Tea Admin Dashboard
 
 export interface Product {
   id: string;
