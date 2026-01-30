@@ -29,7 +29,7 @@ const mockActivityLogs: ActivityLog[] = [
 export default function Profile() {
   const [profile, setProfile] = useState({
     name: 'Admin User',
-    email: 'admin@teabakery.com',
+    email: 'admin@thathatea.com',
     phone: '+91 98765 43210',
     role: 'Super Admin',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200'

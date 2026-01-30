@@ -146,7 +146,7 @@ const SidebarContent = memo(({
               exit={{ opacity: 0, width: 0 }}
               className="overflow-hidden"
             >
-              <h1 className="font-display font-bold text-lg whitespace-nowrap">Tea & Bakery</h1>
+              <h1 className="font-display font-bold text-lg whitespace-nowrap">Thatha Tea</h1>
               <p className="text-xs text-sidebar-foreground/60 whitespace-nowrap">Admin Portal</p>
             </motion.div>
           )}
@@ -196,7 +196,7 @@ const SidebarContent = memo(({
               exit={{ opacity: 0 }}
               className="text-xs text-sidebar-foreground/40 text-center"
             >
-              © 2024 Tea & Bakery
+              © 2024 Thatha Tea
             </motion.p>
           )}
         </AnimatePresence>

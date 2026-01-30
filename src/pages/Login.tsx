@@ -75,7 +75,7 @@ export default function Login() {
           >
             <Coffee className="w-12 h-12" />
           </motion.div>
-          <h1 className="font-display text-4xl font-bold mb-4">Tea & Bakery</h1>
+          <h1 className="font-display text-4xl font-bold mb-4">Thatha Tea</h1>
           <p className="text-xl opacity-90 mb-8">Admin Portal</p>
           <div className="space-y-4 text-left max-w-xs mx-auto">
             <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
@@ -110,7 +110,7 @@ export default function Login() {
             <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-4">
               <Coffee className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h1 className="font-display text-2xl font-bold">Tea & Bakery</h1>
+            <h1 className="font-display text-2xl font-bold">Thatha Tea</h1>
             <p className="text-muted-foreground">Admin Portal</p>
           </div>
 
@@ -129,7 +129,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@teabakery.com"
+                  placeholder="admin@thathatea.com"
                   className={`pl-10 h-12 ${errors.email ? 'border-destructive' : ''}`}
                 />
               </div>
@@ -188,13 +188,13 @@ export default function Login() {
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground text-center">
               <strong>Demo Credentials:</strong><br />
-              Email: admin@teabakery.com<br />
+              Email: admin@thathatea.com<br />
               Password: admin123
             </p>
           </div>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            © 2024 Tea & Bakery. All rights reserved.
+            © 2024 Thatha Tea. All rights reserved.
           </p>
         </div>
       </motion.div>

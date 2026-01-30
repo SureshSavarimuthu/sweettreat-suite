@@ -52,7 +52,7 @@ Date: ${invoice.createdAt}
 Due Date: ${invoice.dueDate}
 
 From:
-Tea & Bakery Central
+Thatha Tea Central
 Chennai, Tamil Nadu
 
 To:
