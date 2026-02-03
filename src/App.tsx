@@ -5,7 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { HubAuthProvider } from "@/contexts/HubAuthContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { HubProtectedRoute } from "@/components/hub/HubProtectedRoute";
+
+// Admin Pages
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import ProductCreate from "./pages/products/ProductCreate";
@@ -38,53 +42,75 @@ import ForgotPassword from "./pages/ForgotPassword";
 import VerifyOtp from "./pages/VerifyOtp";
 import NotFound from "./pages/NotFound";
 
+// Hub Pages
+import HubLogin from "./pages/hub/HubLogin";
+import HubDashboard from "./pages/hub/HubDashboard";
+import HubStock from "./pages/hub/HubStock";
+import HubProduction from "./pages/hub/HubProduction";
+import HubOrders from "./pages/hub/HubOrders";
+import HubStaff from "./pages/hub/HubStaff";
+import HubSettings from "./pages/hub/HubSettings";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
-        <SidebarProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/verify-otp" element={<VerifyOtp />} />
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/products/create" element={<ProductCreate />} />
-                <Route path="/products/:slug" element={<ProductView />} />
-                <Route path="/products/:slug/edit" element={<ProductEdit />} />
-                <Route path="/franchises" element={<Franchises />} />
-                <Route path="/central-hub" element={<CentralHub />} />
-                <Route path="/central-hub/:id" element={<CentralHubDetail />} />
-                <Route path="/employees" element={<Employees />} />
-                <Route path="/employees/create" element={<EmployeeCreate />} />
-                <Route path="/employees/:id" element={<EmployeeView />} />
-                <Route path="/employees/:id/edit" element={<EmployeeEdit />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/attendance" element={<Attendance />} />
-                <Route path="/new-product-launch" element={<ProductLaunch />} />
-                <Route path="/careers" element={<Careers />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/reports/employees" element={<EmployeeReports />} />
-                <Route path="/reports/franchises" element={<FranchiseReports />} />
-                <Route path="/reports/products" element={<ProductReports />} />
-                <Route path="/reports/orders" element={<OrderReports />} />
-                <Route path="/reports/sales" element={<SalesReports />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </SidebarProvider>
+        <HubAuthProvider>
+          <SidebarProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  {/* Admin Routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/verify-otp" element={<VerifyOtp />} />
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/products/create" element={<ProductCreate />} />
+                  <Route path="/products/:slug" element={<ProductView />} />
+                  <Route path="/products/:slug/edit" element={<ProductEdit />} />
+                  <Route path="/franchises" element={<Franchises />} />
+                  <Route path="/central-hub" element={<CentralHub />} />
+                  <Route path="/central-hub/:id" element={<CentralHubDetail />} />
+                  <Route path="/employees" element={<Employees />} />
+                  <Route path="/employees/create" element={<EmployeeCreate />} />
+                  <Route path="/employees/:id" element={<EmployeeView />} />
+                  <Route path="/employees/:id/edit" element={<EmployeeEdit />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/new-product-launch" element={<ProductLaunch />} />
+                  <Route path="/careers" element={<Careers />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/reports/employees" element={<EmployeeReports />} />
+                  <Route path="/reports/franchises" element={<FranchiseReports />} />
+                  <Route path="/reports/products" element={<ProductReports />} />
+                  <Route path="/reports/orders" element={<OrderReports />} />
+                  <Route path="/reports/sales" element={<SalesReports />} />
+                  <Route path="/settings" element={<Settings />} />
+                  
+                  {/* Hub Routes */}
+                  <Route path="/hub/login" element={<HubLogin />} />
+                  <Route path="/hub" element={<HubProtectedRoute><HubDashboard /></HubProtectedRoute>} />
+                  <Route path="/hub/stock" element={<HubProtectedRoute><HubStock /></HubProtectedRoute>} />
+                  <Route path="/hub/production" element={<HubProtectedRoute><HubProduction /></HubProtectedRoute>} />
+                  <Route path="/hub/orders" element={<HubProtectedRoute><HubOrders /></HubProtectedRoute>} />
+                  <Route path="/hub/staff" element={<HubProtectedRoute><HubStaff /></HubProtectedRoute>} />
+                  <Route path="/hub/settings" element={<HubProtectedRoute><HubSettings /></HubProtectedRoute>} />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </SidebarProvider>
+        </HubAuthProvider>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
